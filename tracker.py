@@ -91,16 +91,26 @@ gone = 0
 last_detected = time.time()
 last_tracked = time.time()
 
+import socket, numpy, pickle
+s=socket.socket(socket.AF_INET , socket.SOCK_DGRAM)
+ip="192.168.175.49"
+port=6666
+s.bind((ip,port))
+
 yolo = 1
 if yolo:
     # Load the model from torch.hub
-    model = torch.hub.load('ultralytics/yolov5', 'yolov5s', force_reload=True)
-    detect = lambda frame : model(frame, size=640)
+    model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
+    detect = lambda frame: model(frame, size=640)
 else:
-    detect = lambda frame : hog.detectMultiScale(frame, winStride=(8,8) ,padding=(8,8),scale=1.05)
+    detect = lambda frame: hog.detectMultiScale(frame, winStride=(8,8) ,padding=(8,8),scale=1.05)
+    
 while True:
-    # Capture frame-by-frame
-    ret, frame = cap.read()
+    x=s.recvfrom(1000000)
+    clientip = x[1][0]
+    frame=x[0]
+    frame=pickle.loads(frame)
+    frame = cv2.imdecode(frame, cv2.IMREAD_COLOR)
 
     # resizing for faster detection
     frame = cv2.resize(frame, (640, 480))
@@ -112,17 +122,20 @@ while True:
         results.print()
         if results.xyxy:
             boxes = results.pandas().xyxy[0].to_numpy()
-            boxes = boxes[:1]
+            boxes = np.array([box for box in boxes if box[-1] == 'person'])
     else:
         boxes, _ = detect(frame)
 
     rects = []
-    for (xA, yA, xB, yB) in [[x, y, x + w, y + h] for (x, y, w, h) in boxes[:,:4].astype(int)]:
-        last_detected = time.time()
-        # display the detected boxes in the colour picture
-        cv2.rectangle(frame, (xA, yA), (xB, yB),
-                        (0, 255, 0), 2)
-        rects.append((xA, yA, xB, yB))
+    if boxes.any():
+        boxesCoordinates = boxes[:, :4].astype(int)
+        convertBoxes = [[x, y, x+w, y+h] for (x,y,w,h) in boxesCoordinates]
+        for (xA, yA, xB, yB) in [[x, y, x + w, y + h] for (x, y, w, h) in boxes[:,:4].astype(int)]:
+            last_detected = time.time()
+            # display the detected boxes in the colour picture
+            cv2.rectangle(frame, (xA, yA), (xB, yB),
+                            (0, 255, 0), 2)
+            rects.append((xA, yA, xB, yB))
 
     rects = rects[:1]
     if state == FIND:
