@@ -132,9 +132,6 @@ while True:
         convertBoxes = [[x, y, x+w, y+h] for (x,y,w,h) in boxesCoordinates]
         for (xA, yA, xB, yB) in [[x, y, x + w, y + h] for (x, y, w, h) in boxes[:,:4].astype(int)]:
             last_detected = time.time()
-            # display the detected boxes in the colour picture
-            cv2.rectangle(frame, (xA, yA), (xB, yB),
-                            (0, 255, 0), 2)
             rects.append((xA, yA, xB, yB))
 
     rects = rects[:1]
@@ -178,6 +175,10 @@ while True:
                 else:
                     gone = 0
             cv2.rectangle(frame, p1, p2, (255,0,0), 2, 1)
+            for (xA, yA, xB, yB) in rects:
+                # display the detected boxes in the colour picture
+                cv2.rectangle(frame, (xA, yA), (xB, yB),
+                                (0, 255, 0), 2)
             cv2.putText(frame, f"Tracking so far {count} persons", (100,80), cv2.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
 
         if time.time() - last_detected > 0.2:
