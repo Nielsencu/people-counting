@@ -94,7 +94,7 @@ last_tracked = time.time()
 import socket, numpy, pickle
 s=socket.socket(socket.AF_INET , socket.SOCK_DGRAM)
 ip="192.168.175.49"
-port=6666
+port=5000
 s.bind((ip,port))
 
 yolo = 1
@@ -130,9 +130,10 @@ while True:
     if boxes.any():
         boxesCoordinates = boxes[:, :4].astype(int)
         convertBoxes = [[x, y, x+w, y+h] for (x,y,w,h) in boxesCoordinates]
-        for (xA, yA, xB, yB) in [[x, y, x + w, y + h] for (x, y, w, h) in boxes[:,:4].astype(int)]:
+        for (xA, yA, xB, yB) in convertBoxes:
             last_detected = time.time()
             rects.append((xA, yA, xB, yB))
+        print("Number of detections ", rects)
 
     rects = rects[:1]
     if state == FIND:
@@ -143,7 +144,7 @@ while True:
             count += 1
             print(f"Count increased to {count}")
         else:
-            cv2.putText(frame, "No persons detected", (100,80), cv2.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
+            cv2.putText(frame, "No persons detected", (390,440), cv2.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
     elif state == TRACK:
         ok = False
         if len(boxes) > 0:
@@ -160,6 +161,7 @@ while True:
         # Draw bounding box
         if ok:
             # for bbox in tracks_bbs_ids:
+            print(tracks_bbs_ids)
             bbox = tracks_bbs_ids[0]
             # Tracking success
             p1 = (int(bbox[0]), int(bbox[1]))
@@ -179,7 +181,7 @@ while True:
                 # display the detected boxes in the colour picture
                 cv2.rectangle(frame, (xA, yA), (xB, yB),
                                 (0, 255, 0), 2)
-            cv2.putText(frame, f"Tracking so far {count} persons", (100,80), cv2.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
+            cv2.putText(frame, f"In frame person count: {len(boxes)}", (330,440), cv2.FONT_HERSHEY_SIMPLEX, 0.75,(0,0,255),2)
 
         if time.time() - last_detected > 0.2:
             last_detected = time.time()
@@ -194,6 +196,7 @@ while True:
             state = FIND
             gone = 0
             continue
+    cv2.putText(frame, f"Person count : {count}", (430,470), cv2.FONT_HERSHEY_SIMPLEX, 0.75,(255,0,255),2)
     cv2.imshow('frame',frame)
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
